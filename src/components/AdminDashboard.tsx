@@ -101,23 +101,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-6xl w-full h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-6xl w-full h-[92vh] max-h-[95vh] my-auto flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
         
+        {/* Mobile Slide Indicator */}
+        <div className="pt-2 pb-1 bg-slate-900 sm:hidden flex justify-center">
+          <div className="w-10 h-1 bg-slate-700 rounded-full" />
+        </div>
+
         {/* Header Bar */}
-        <div className="bg-slate-900 text-white p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="bg-slate-900 text-white p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center text-white shadow-md">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center text-white shadow-md shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black font-serif">لوحة تحكم الإدارة – وصال</h2>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+                <h2 className="text-sm sm:text-lg font-black font-serif">لوحة تحكم الإدارة – وصال</h2>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold hidden sm:inline-block">
                   صلاحيات مدير النظام
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-[10px] sm:text-xs text-slate-400">
                 إدارة الأعضاء، مراجعة الصور، طلبات التواصل، الشكاوى، والدعم الفني
               </p>
             </div>
@@ -125,9 +130,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-white text-xs font-bold transition-all border border-slate-700 shrink-0"
+            title="إغلاق لوحة التحكم"
           >
-            خروج من اللوحة ✕
+            <span>إغلاق اللوحة</span>
+            <XCircle className="w-4 h-4" />
           </button>
         </div>
 
@@ -705,11 +712,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
         {/* Rejection Reason Modal */}
         {photoToReject && (
-          <div className="fixed inset-0 z-60 bg-slate-900/80 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                سبب رفض الصورة الشخصية ({photoToReject.displayName})
-              </h3>
+          <div className="fixed inset-0 z-60 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800 my-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  سبب رفض الصورة الشخصية ({photoToReject.displayName})
+                </h3>
+                <button
+                  onClick={() => setPhotoToReject(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full bg-slate-100 dark:bg-slate-800"
+                  title="إغلاق"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
 
               <select
                 value={rejectReason}

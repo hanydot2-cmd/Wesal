@@ -73,25 +73,30 @@ export const AdminMessagingModal: React.FC<AdminMessagingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full h-[80vh] flex flex-col shadow-2xl border border-indigo-100 dark:border-slate-800 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full h-[88vh] max-h-[92vh] my-auto flex flex-col shadow-2xl border border-indigo-100 dark:border-slate-800 relative overflow-hidden">
         
+        {/* Mobile Slide Indicator */}
+        <div className="pt-2 pb-1 bg-slate-900 sm:hidden flex justify-center">
+          <div className="w-10 h-1 bg-slate-700 rounded-full" />
+        </div>
+
         {/* Header */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 border-b border-slate-800 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6 text-white" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold font-serif">
+                <h3 className="text-xs sm:text-sm font-bold font-serif">
                   مراسلة الإدارة والدعم الفني
                 </h3>
-                <span className="text-[10px] bg-indigo-800 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-indigo-800 px-2 py-0.5 rounded-full font-bold hidden sm:inline-block">
                   خاص ومحمي 🔒
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300">
+              <p className="text-[10px] sm:text-[11px] text-slate-300">
                 قناة تواصل خاصة ومباشرة بينك وبين إدارة منصة وصال
               </p>
             </div>
@@ -99,9 +104,11 @@ export const AdminMessagingModal: React.FC<AdminMessagingModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-300 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white text-xs font-bold transition-colors border border-slate-700"
+            title="إغلاق النافذة"
           >
-            <X className="w-5 h-5" />
+            <span>إغلاق</span>
+            <X className="w-4 h-4" />
           </button>
         </div>
 

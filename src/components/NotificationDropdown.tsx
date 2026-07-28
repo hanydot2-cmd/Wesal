@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Notification } from '../types';
 import { store } from '../services/store';
-import { Bell, CheckCheck, Heart, Sparkles, MessageSquare, ShieldCheck, Camera } from 'lucide-react';
+import { Bell, CheckCheck, Heart, Sparkles, MessageSquare, ShieldCheck, Camera, X } from 'lucide-react';
 
 interface NotificationDropdownProps {
   userId: string;
@@ -42,6 +42,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-4 shadow-2xl border border-rose-100 dark:border-slate-800 space-y-3">
+      {/* Mobile Drag Handle */}
+      <div className="w-10 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto sm:hidden" />
+
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-rose-500" />
@@ -50,16 +53,26 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
           </h3>
         </div>
 
-        <button
-          onClick={handleMarkAllRead}
-          className="text-[10px] font-bold text-rose-600 hover:underline flex items-center gap-1"
-        >
-          <CheckCheck className="w-3.5 h-3.5" />
-          تحديد الكل ككمقروء
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleMarkAllRead}
+            className="text-[10px] font-bold text-rose-600 hover:underline flex items-center gap-1 bg-rose-50 dark:bg-rose-950/60 px-2 py-1 rounded-lg"
+          >
+            <CheckCheck className="w-3.5 h-3.5" />
+            تحديد الكل كمقروء
+          </button>
+
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 dark:bg-slate-800 transition-colors"
+            title="إغلاق الإشعارات"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-2 max-h-80 overflow-y-auto">
+      <div className="space-y-2 max-h-80 overflow-y-auto touch-pan-y">
         {notifications.length === 0 ? (
           <p className="text-xs text-slate-400 text-center py-6">لا توجد إشعارات حالياً.</p>
         ) : (
@@ -96,6 +109,15 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ user
           ))
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 mt-2"
+      >
+        <X className="w-3.5 h-3.5" />
+        <span>إغلاق الإشعارات</span>
+      </button>
     </div>
   );
 };

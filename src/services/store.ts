@@ -18,6 +18,7 @@ import {
   UserStatus
 } from '../types';
 import {
+  ADMIN_USER,
   INITIAL_MOCK_PROFILES,
   INITIAL_INTERACTIONS,
   INITIAL_MUTUAL_MATCHES,
@@ -29,7 +30,7 @@ import {
 import { checkForbiddenContent } from '../lib/securityFilter';
 import confetti from 'canvas-confetti';
 
-const STORAGE_KEY = 'wesal_app_data_v1';
+const STORAGE_KEY = 'wesal_app_data_v2';
 
 interface AppState {
   currentUserId: string | null;
@@ -64,9 +65,23 @@ class Store {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        const existingIds = new Set((parsed.profiles || []).map((p: UserProfile) => p.id));
+        let mergedProfiles = [
+          ...(parsed.profiles || []),
+          ...INITIAL_MOCK_PROFILES.filter(p => !existingIds.has(p.id))
+        ];
+
+        // Ensure ADMIN_USER has its distinct official photoUrl
+        mergedProfiles = mergedProfiles.map(p => {
+          if (p.id === 'admin_1') {
+            return { ...p, photoUrl: ADMIN_USER.photoUrl };
+          }
+          return p;
+        });
+
         return {
           currentUserId: parsed.currentUserId ?? 'user_male_1',
-          profiles: parsed.profiles || INITIAL_MOCK_PROFILES,
+          profiles: mergedProfiles.length > 0 ? mergedProfiles : INITIAL_MOCK_PROFILES,
           interactions: parsed.interactions || INITIAL_INTERACTIONS,
           mutualMatches: parsed.mutualMatches || INITIAL_MUTUAL_MATCHES,
           contactRequests: parsed.contactRequests || INITIAL_CONTACT_REQUESTS,

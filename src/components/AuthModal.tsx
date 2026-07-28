@@ -110,29 +110,45 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-rose-100 dark:border-slate-800 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full shadow-2xl border border-rose-100 dark:border-slate-800 relative flex flex-col max-h-[90vh] my-auto overflow-hidden">
         
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 left-5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Modal Header */}
-        <div className="text-center mb-6 space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white flex items-center justify-center mx-auto shadow-md">
-            <Heart className="w-6 h-6 fill-white" />
+        {/* Sticky Header with Close Button and Mobile Drag Handle */}
+        <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-xs">
+              <Heart className="w-4 h-4 fill-white" />
+            </div>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-100 font-serif">
+              {mode === 'register' ? 'إنشاء حساب جديد' : 'تسجيل الدخول'}
+            </span>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white font-serif">
-            {mode === 'register' ? 'إنشاء حساب جديد في وصال' : 'تسجيل الدخول إلى وصال'}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            منصة التعارف والزواج الجاد الأكثر أماناً وخصوصية
-          </p>
+
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all border border-slate-200/60 dark:border-slate-700"
+            title="إغلاق النافذة"
+          >
+            <span>إغلاق</span>
+            <X className="w-4 h-4" />
+          </button>
         </div>
+
+        {/* Scrollable Modal Content */}
+        <div className="p-5 sm:p-7 overflow-y-auto space-y-5 flex-1 touch-pan-y">
+          
+          {/* Mobile Visual Drag Bar Indicator */}
+          <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto -mt-2 mb-2 sm:hidden shrink-0" />
+
+          {/* Modal Header Title */}
+          <div className="text-center space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-serif">
+              {mode === 'register' ? 'مرحباً بك في وصال' : 'مرحباً بعودتك'}
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              منصة التعارف والزواج الجاد الأكثر أماناً وخصوصية
+            </p>
+          </div>
 
         {/* Mode Toggle Tabs */}
         <div className="flex rounded-2xl bg-slate-100 dark:bg-slate-800 p-1 mb-6">
@@ -351,6 +367,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           🔒 بياناتك مشفرة ولا تظهر للعامة مطلقاً.
         </p>
 
+        {/* Bottom Explicit Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 mt-2"
+        >
+          <X className="w-4 h-4" />
+          <span>إغلاق النافذة</span>
+        </button>
+
+        </div>
       </div>
     </div>
   );

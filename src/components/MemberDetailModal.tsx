@@ -91,24 +91,48 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-rose-100 dark:border-slate-800 relative my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl border border-rose-100 dark:border-slate-800 relative my-auto flex flex-col max-h-[90vh] overflow-hidden">
         
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 left-5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Feedback Banner */}
-        {actionFeedback && (
-          <div className="mb-4 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span>{actionFeedback}</span>
+        {/* Sticky Header with Close Button and Mobile Drag Handle */}
+        <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-5 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-xs">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white font-serif">
+                بطاقة العضو التفصيلية
+              </h3>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                {member.displayName} • {member.age} سنة ({member.city})
+              </p>
+            </div>
           </div>
-        )}
+
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all border border-slate-200/60 dark:border-slate-700"
+            title="إغلاق النافذة"
+          >
+            <span>إغلاق</span>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Scrollable Content Body */}
+        <div className="p-5 sm:p-8 overflow-y-auto space-y-6 flex-1 touch-pan-y">
+          
+          {/* Mobile Drag Indicator */}
+          <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto -mt-3 mb-1 sm:hidden shrink-0" />
+
+          {/* Feedback Banner */}
+          {actionFeedback && (
+            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span>{actionFeedback}</span>
+            </div>
+          )}
 
         {/* Header Profile Photo & Title */}
         <div className="flex flex-col sm:flex-row items-center gap-6 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
@@ -338,15 +362,33 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           </div>
         )}
 
+        {/* Bottom Explicit Close Button */}
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors flex items-center justify-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            <span>إغلاق بطاقة العضو</span>
+          </button>
+        </div>
+
+        </div>
+
         {/* Report Modal */}
         {showReportModal && (
-          <div className="fixed inset-0 z-60 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-              <div className="flex items-center justify-between">
+          <div className="fixed inset-0 z-60 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 my-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   الإبلاغ عن المستخدم ({member.displayName})
                 </h3>
-                <button onClick={() => setShowReportModal(false)} className="text-slate-400">
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 dark:bg-slate-800"
+                  title="إغلاق"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>

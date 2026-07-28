@@ -70,34 +70,39 @@ export const ChatModal: React.FC<ChatModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full h-[85vh] flex flex-col shadow-2xl border border-rose-100 dark:border-slate-800 relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full h-[88vh] max-h-[92vh] my-auto flex flex-col shadow-2xl border border-rose-100 dark:border-slate-800 relative overflow-hidden">
         
+        {/* Mobile Slide Indicator */}
+        <div className="pt-2 pb-1 bg-slate-50 dark:bg-slate-800/60 sm:hidden flex justify-center">
+          <div className="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
+        </div>
+
         {/* Chat Header */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <img
               src={partner.photoUrl}
               alt={partner.displayName}
-              className="w-11 h-11 rounded-2xl object-cover ring-2 ring-rose-500/20"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl object-cover ring-2 ring-rose-500/20"
             />
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-slate-900 dark:text-white font-serif">
+                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white font-serif">
                   {partner.displayName}
                 </h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[160px] sm:max-w-none">
                 {partner.occupation} • {partner.city} ({partner.nationality})
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={handleTerminate}
-              className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 hover:bg-rose-100 text-xs font-bold transition-colors"
+              className="px-2.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 hover:bg-rose-100 text-[11px] sm:text-xs font-bold transition-colors"
               title="إنهاء التواصل"
             >
               إنهاء التواصل
@@ -105,9 +110,11 @@ export const ChatModal: React.FC<ChatModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-200/80 dark:bg-slate-700 hover:bg-rose-500 hover:text-white text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors"
+              title="إغلاق المحادثة"
             >
-              <X className="w-5 h-5" />
+              <span>إغلاق</span>
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
