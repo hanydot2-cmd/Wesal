@@ -14,19 +14,22 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Sparkles,
-  Users
+  Users,
+  Home
 } from 'lucide-react';
 
 interface MemberSearchProps {
   currentUser: UserProfile | null;
   onSelectMember: (member: UserProfile) => void;
   onOpenAuth: (mode: 'login' | 'register') => void;
+  onGoHome?: () => void;
 }
 
 export const MemberSearch: React.FC<MemberSearchProps> = ({
   currentUser,
   onSelectMember,
-  onOpenAuth
+  onOpenAuth,
+  onGoHome
 }) => {
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -149,7 +152,17 @@ export const MemberSearch: React.FC<MemberSearchProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {onGoHome && (
+            <button
+              onClick={onGoHome}
+              className="px-4 py-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-rose-500/20 transition-all"
+            >
+              <Home className="w-4 h-4" />
+              <span>الرئيسية 🏠</span>
+            </button>
+          )}
+
           <span className="px-3.5 py-1.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold text-xs border border-rose-200 dark:border-rose-800">
             نتائج البحث: {sorted.length} عضو
           </span>

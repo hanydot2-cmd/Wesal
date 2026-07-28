@@ -12,7 +12,9 @@ import {
   Moon,
   Sparkles,
   ChevronDown,
-  UserCheck
+  UserCheck,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { store } from '../services/store';
@@ -276,6 +278,28 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <MessageCircle className="w-4 h-4 text-indigo-500" />
                         مراسلة الإدارة الخاصة
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          onOpenAuth('login');
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-right"
+                      >
+                        <LogIn className="w-4 h-4 text-rose-500" />
+                        تسجيل الدخول / حساب آخر
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          onOpenAuth('register');
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-right"
+                      >
+                        <UserPlus className="w-4 h-4 text-pink-500" />
+                        إنشاء حساب جديد
                       </button>
 
                       {currentUser.role === 'admin' && (

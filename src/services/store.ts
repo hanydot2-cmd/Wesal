@@ -71,7 +71,8 @@ class Store {
           ...INITIAL_MOCK_PROFILES.filter(p => !existingIds.has(p.id))
         ];
 
-        // Ensure ADMIN_USER has its distinct official photoUrl and email
+        // Ensure all mock profiles use their distinct updated photoUrl
+        const mockPhotoMap = new Map(INITIAL_MOCK_PROFILES.map(p => [p.id, p.photoUrl]));
         mergedProfiles = mergedProfiles.map(p => {
           if (p.id === 'admin_1' || p.email.toLowerCase() === 'hanydot2@gmail.com') {
             return {
@@ -81,6 +82,12 @@ class Store {
               photoUrl: ADMIN_USER.photoUrl,
               displayName: ADMIN_USER.displayName,
               photoReviewStatus: 'approved'
+            };
+          }
+          if (mockPhotoMap.has(p.id)) {
+            return {
+              ...p,
+              photoUrl: mockPhotoMap.get(p.id)!
             };
           }
           return p;

@@ -125,6 +125,7 @@ export function App() {
             currentUser={currentUser}
             onSelectMember={setSelectedMember}
             onOpenAuth={handleOpenAuth}
+            onGoHome={() => setActiveTab('home')}
           />
         )}
 
@@ -268,8 +269,11 @@ export function App() {
       {/* Auth Modal */}
       {authModal.open && (
         <AuthModal
+          isOpen={true}
           mode={authModal.mode}
+          initialMode={authModal.mode}
           onClose={() => setAuthModal({ open: false, mode: 'login' })}
+          onOpenTerms={() => setShowTermsModal(true)}
           onSuccess={() => {
             setAuthModal({ open: false, mode: 'login' });
             setActiveTab('profile');
@@ -283,6 +287,10 @@ export function App() {
           member={selectedMember}
           currentUser={currentUser}
           onClose={() => setSelectedMember(null)}
+          onGoHome={() => {
+            setSelectedMember(null);
+            setActiveTab('home');
+          }}
           onOpenChat={(pId) => setActiveChatPartnerId(pId)}
           onOpenAuth={handleOpenAuth}
         />

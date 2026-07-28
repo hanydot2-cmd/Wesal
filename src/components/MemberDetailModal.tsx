@@ -18,13 +18,15 @@ import {
   ShieldCheck,
   CheckCircle2,
   Lock,
-  MessagesSquare
+  MessagesSquare,
+  Home
 } from 'lucide-react';
 
 interface MemberDetailModalProps {
   member: UserProfile | null;
   currentUser: UserProfile | null;
   onClose: () => void;
+  onGoHome?: () => void;
   onOpenChat: (memberId: string) => void;
   onOpenAuth: (mode: 'login' | 'register') => void;
 }
@@ -33,6 +35,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   member,
   currentUser,
   onClose,
+  onGoHome,
   onOpenChat,
   onOpenAuth
 }) => {
@@ -110,14 +113,30 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all border border-slate-200/60 dark:border-slate-700"
-            title="إغلاق النافذة"
-          >
-            <span>إغلاق</span>
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onGoHome && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onGoHome();
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all shadow-xs"
+                title="العودة للصفحة الرئيسية"
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>الرئيسية 🏠</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all border border-slate-200/60 dark:border-slate-700"
+              title="إغلاق النافذة"
+            >
+              <span>إغلاق</span>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Content Body */}
@@ -362,15 +381,31 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           </div>
         )}
 
-        {/* Bottom Explicit Close Button */}
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
+        {/* Bottom Explicit Close & Home Buttons */}
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {onGoHome && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onGoHome();
+              }}
+              className="py-3 px-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-md shadow-rose-500/20"
+            >
+              <Home className="w-4 h-4" />
+              <span>العودة للصفحة الرئيسية 🏠</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors flex items-center justify-center gap-2"
+            className={`py-3 px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors flex items-center justify-center gap-2 ${
+              !onGoHome ? 'w-full' : ''
+            }`}
           >
             <X className="w-4 h-4" />
-            <span>إغلاق بطاقة العضو</span>
+            <span>إغلاق بطاقة العضو ✖</span>
           </button>
         </div>
 

@@ -4,21 +4,23 @@ import { Gender, UserProfile } from '../types';
 import { store } from '../services/store';
 
 interface AuthModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
+  mode?: 'login' | 'register';
+  initialMode?: 'login' | 'register';
   onClose: () => void;
-  initialMode: 'login' | 'register';
-  onSuccess: (user: UserProfile, isNewRegistration: boolean) => void;
-  onOpenTerms: () => void;
+  onSuccess?: (user: UserProfile, isNewRegistration: boolean) => void;
+  onOpenTerms?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
-  isOpen,
+  isOpen = true,
   onClose,
+  mode: propMode,
   initialMode,
   onSuccess,
   onOpenTerms
 }) => {
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode || propMode || 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -56,7 +58,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         isTermsAccepted: true
       });
 
-      onSuccess(newProfile, true);
+      if (onSuccess) onSuccess(newProfile, true);
       onClose();
     } else {
       // Login mode
@@ -82,7 +84,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         store.setCurrentUserId(user.id);
       }
 
-      onSuccess(user, false);
+      if (onSuccess) onSuccess(user, false);
       onClose();
     }
   };
@@ -108,10 +110,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         isAgeConfirmed: true,
         isTermsAccepted: true
       });
-      onSuccess(user, true);
+      if (onSuccess) onSuccess(user, true);
     } else {
       store.setCurrentUserId(user.id);
-      onSuccess(user, false);
+      if (onSuccess) onSuccess(user, false);
     }
     onClose();
   };
