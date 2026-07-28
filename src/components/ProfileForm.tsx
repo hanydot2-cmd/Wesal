@@ -147,11 +147,11 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ currentUser, onSaved }
               {currentUser.gender === 'male' ? '👨' : '👩'}
             </span>
             <h2 className="text-2xl font-black text-slate-900 dark:text-white font-serif">
-              استكمال وصيانة الملف الشخصي
+              أبلكيشن ملء البيانات الأساسية وتحميل الصورة
             </h2>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-            خصص ملفك بشكل شامل وصادق للمساعدة في مطابقة شريك الحياة المناسب
+            يرجى ملء بياناتك الأساسية بدقة وتحميل صورتك الشخصية. لن تظهر الصورة للأعضاء إلا بعد مراجعة وموافقة الإدارة.
           </p>
         </div>
 

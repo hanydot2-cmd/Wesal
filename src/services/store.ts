@@ -71,10 +71,17 @@ class Store {
           ...INITIAL_MOCK_PROFILES.filter(p => !existingIds.has(p.id))
         ];
 
-        // Ensure ADMIN_USER has its distinct official photoUrl
+        // Ensure ADMIN_USER has its distinct official photoUrl and email
         mergedProfiles = mergedProfiles.map(p => {
-          if (p.id === 'admin_1') {
-            return { ...p, photoUrl: ADMIN_USER.photoUrl };
+          if (p.id === 'admin_1' || p.email.toLowerCase() === 'hanydot2@gmail.com') {
+            return {
+              ...p,
+              email: 'hanydot2@gmail.com',
+              role: 'admin',
+              photoUrl: ADMIN_USER.photoUrl,
+              displayName: ADMIN_USER.displayName,
+              photoReviewStatus: 'approved'
+            };
           }
           return p;
         });
@@ -149,11 +156,14 @@ class Store {
   }
 
   public registerUser(profile: Partial<UserProfile>): UserProfile {
-    const newId = 'user_' + Date.now();
+    const userEmail = (profile.email || '').trim().toLowerCase();
+    const isAdmin = userEmail === 'hanydot2@gmail.com' || userEmail === 'admin@wesal.app';
+
+    const newId = isAdmin ? 'admin_1' : 'user_' + Date.now();
     const newProfile: UserProfile = {
       id: newId,
       email: profile.email || `${newId}@wesal.app`,
-      role: 'user',
+      role: isAdmin ? 'admin' : 'user',
       status: 'active',
       isProfileComplete: Boolean(profile.displayName && profile.age && profile.nationality),
       isAgeConfirmed: true,
@@ -162,13 +172,13 @@ class Store {
       lastActive: new Date().toISOString(),
       isOnline: true,
       gender: profile.gender || 'male',
-      displayName: profile.displayName || 'عضو جديد',
-      age: profile.age || 25,
-      birthDate: profile.birthDate || '2000-01-01',
+      displayName: isAdmin ? 'إدارة منصة وصال (أحمد العتيبي)' : (profile.displayName || 'عضو جديد'),
+      age: profile.age || 35,
+      birthDate: profile.birthDate || '1991-01-01',
       nationality: profile.nationality || 'سعودي',
       country: profile.country || 'المملكة العربية السعودية',
       city: profile.city || 'الرياض',
-      occupation: profile.occupation || 'غير محدد',
+      occupation: isAdmin ? 'مدير منصة وصال' : (profile.occupation || 'غير محدد'),
       jobNature: profile.jobNature || '',
       education: profile.education || 'جامعي',
       maritalStatus: profile.maritalStatus || (profile.gender === 'female' ? 'عزباء' : 'أعزب'),
@@ -176,8 +186,8 @@ class Store {
       childrenCount: profile.childrenCount || 0,
       desiresChildren: profile.desiresChildren || 'نعم',
       smoking: profile.smoking || (profile.gender === 'female' ? 'غير مدخنة' : 'غير مدخن'),
-      photoUrl: profile.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
-      photoReviewStatus: 'pending', // Requires admin approval!
+      photoUrl: isAdmin ? ADMIN_USER.photoUrl : (profile.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400'),
+      photoReviewStatus: isAdmin ? 'approved' : 'pending', // Requires admin approval for standard users!
       bio: profile.bio || '',
       personalTraits: profile.personalTraits || '',
       hobbies: profile.hobbies || '',
@@ -193,7 +203,13 @@ class Store {
       violationCount: 0
     };
 
-    this.state.profiles.push(newProfile);
+    // Replace or add profile
+    const existingIdx = this.state.profiles.findIndex(p => p.id === newId || p.email.toLowerCase() === userEmail);
+    if (existingIdx !== -1) {
+      this.state.profiles[existingIdx] = { ...this.state.profiles[existingIdx], ...newProfile };
+    } else {
+      this.state.profiles.push(newProfile);
+    }
     this.state.currentUserId = newId;
 
     // Send admin notification
@@ -285,6 +301,20 @@ class Store {
 
     if (reverseInter) {
       this.handleMutualMatch(currentUser.id, receiverId);
+    } else if (receiverId !== 'admin_1') {
+      // Simulate live reciprocal interest from default profiles
+      setTimeout(() => {
+        const autoReverseInter: Interaction = {
+          id: 'int_' + Date.now(),
+          senderId: receiverId,
+          receiverId: currentUser.id,
+          type: type === 'like' ? 'like' : type === 'flower' ? 'flower' : 'heart',
+          createdAt: new Date().toISOString()
+        };
+        this.state.interactions.push(autoReverseInter);
+        this.handleMutualMatch(currentUser.id, receiverId);
+        this.saveState();
+      }, 800);
     }
 
     this.saveState();
@@ -393,6 +423,16 @@ class Store {
       type: 'contact_request',
       isRead: false
     });
+
+    // Auto-approve contact requests for default mock profiles after 1 sec for seamless interaction
+    if (receiverId.startsWith('user_') || receiverId.startsWith('demo_')) {
+      setTimeout(() => {
+        const req = this.getContactRequestBetween(currentUser.id, receiverId);
+        if (req && req.status === 'pending') {
+          this.adminReviewContactRequest(req.id, 'approved', 'موافقة فورية متوافقة مع معايير التواصل');
+        }
+      }, 1000);
+    }
 
     this.saveState();
   }
@@ -554,6 +594,54 @@ class Store {
       type: 'chat',
       isRead: false
     });
+
+    // Auto-reply for default mock profiles after 1.5 seconds
+    const receiverProfile = this.getProfileById(receiverId);
+    if (receiverProfile && (receiverId.startsWith('user_') || receiverId.startsWith('demo_'))) {
+      setTimeout(() => {
+        const femaleReplies = [
+          `أهلاً وسهلاً بك يا ${currentUser.displayName}، سعدت بقراءة رسالتك ومواصفاتك الطيبة عبر المنصة.`,
+          `مرحباً بك! يسعدني أن نتواصل بجدية بما يرضي الله سبحانه وتعالى.`,
+          `شكراً على رسالتك اللطيفة، أتمنى لنا وللجميع التوفيق والبركة في البحث عن شريك الحياة.`,
+          `أهلاً بك، قرأت ملفك ويشرفني التعرف عليك أكثر من خلال منصة وصال.`
+        ];
+        const maleReplies = [
+          `أهلاً وسهلاً بكِ، سعدت بتواصلكِ الكريم عبر المنصة الموقرة.`,
+          `مرحباً بكِ، يشرفني الحديث معكِ وتكملة التعارف الجاد في وصال.`,
+          `شكراً لكِ على هذه المبادرة الطيبة، أتمنى لكِ التوفيق دائماً.`,
+          `أهلاً بكِ، يسعدني التعرف عليكِ والحديث بما يرضي الله.`
+        ];
+        const pool = receiverProfile.gender === 'female' ? femaleReplies : maleReplies;
+        const replyText = pool[Math.floor(Math.random() * pool.length)];
+
+        const autoMsg: Message = {
+          id: 'msg_' + Date.now(),
+          conversationId,
+          senderId: receiverId,
+          receiverId: currentUser.id,
+          text: replyText,
+          createdAt: new Date().toISOString(),
+          isRead: false
+        };
+        this.state.messages.push(autoMsg);
+
+        const targetConv = this.state.conversations.find((c) => c.id === conversationId);
+        if (targetConv) {
+          targetConv.lastMessage = replyText;
+          targetConv.lastMessageTime = autoMsg.createdAt;
+        }
+
+        this.addNotification({
+          userId: currentUser.id,
+          title: `رسالة جديدة من ${receiverProfile.displayName} 💬`,
+          message: replyText,
+          type: 'chat',
+          isRead: false
+        });
+
+        this.saveState();
+      }, 1500);
+    }
 
     this.saveState();
     return { success: true };

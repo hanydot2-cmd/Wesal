@@ -65,8 +65,7 @@ export function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenAuth={handleOpenAuth}
-        onLogout={handleLogout}
-        onOpenAdminPanel={() => setShowAdminDashboard(true)}
+        onOpenAdmin={() => setShowAdminDashboard(true)}
       />
 
       {/* Main Content Area */}
@@ -76,8 +75,8 @@ export function App() {
         {activeTab === 'home' && (
           <div className="space-y-16">
             <Hero
-              onStartRegistration={() => handleOpenAuth('register')}
-              onBrowseMembers={() => setActiveTab('browse')}
+              onOpenAuth={handleOpenAuth}
+              setActiveTab={setActiveTab}
             />
 
             {/* Featured Members Showcase */}

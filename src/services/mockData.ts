@@ -2,7 +2,7 @@ import { UserProfile, Interaction, ContactRequest, Message, Conversation, Suppor
 
 export const ADMIN_USER: UserProfile = {
   id: 'admin_1',
-  email: 'admin@wesal.app',
+  email: 'hanydot2@gmail.com',
   role: 'admin',
   status: 'active',
   isProfileComplete: true,
@@ -12,7 +12,7 @@ export const ADMIN_USER: UserProfile = {
   lastActive: new Date().toISOString(),
   isOnline: true,
   gender: 'male',
-  displayName: 'إدارة منصة وصال',
+  displayName: 'إدارة منصة وصال (أحمد العتيبي)',
   age: 35,
   birthDate: '1991-05-15',
   nationality: 'سعودي',

@@ -51,7 +51,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAuth, setActiveTab }) => {
             </button>
 
             <button
-              onClick={() => setActiveTab('members')}
+              onClick={() => setActiveTab('browse')}
               className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-bold text-sm border border-indigo-200/80 dark:border-indigo-800 hover:-translate-y-0.5 transition-all"
             >
               <Search className="w-4 h-4" />

@@ -43,7 +43,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab, onOpenTerms }) => 
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('members')}
+                  onClick={() => setActiveTab('browse')}
                   className="hover:text-rose-400 transition-colors"
                 >
                   تصفح الأعضاء
