@@ -8,6 +8,7 @@ import {
   AcceptsChildren
 } from '../types';
 import { store } from '../services/store';
+import { detectSocialProvider } from '../services/socialAvatars';
 import {
   Camera,
   Save,
@@ -166,6 +167,49 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ currentUser, onSaved }
         <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-2 animate-bounce">
           <CheckCircle2 className="w-5 h-5 text-emerald-500" />
           <span>تم حفظ الملف الشخصي والمواصفات بنجاح! الصورة قيد المراجعة الإدارية.</span>
+        </div>
+      )}
+
+      {/* Social Login Welcome & Next Steps Banner */}
+      {detectSocialProvider(currentUser) && (
+        <div className="mb-6 p-5 rounded-3xl bg-gradient-to-r from-blue-500/10 via-rose-500/10 to-purple-500/10 border border-blue-200/80 dark:border-blue-900/60 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-sm">
+          <div className="flex items-start gap-4 text-right">
+            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center shrink-0 text-xl font-bold border border-slate-200 dark:border-slate-700">
+              {detectSocialProvider(currentUser) === 'Facebook'
+                ? 'f'
+                : detectSocialProvider(currentUser) === 'Twitter'
+                  ? '𝕏'
+                  : 'G'}
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                  تم التسجيل بحساب {detectSocialProvider(currentUser)} ✅
+                </span>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  خطوة إكمال التسجيل في وصال
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                مرحباً بك! تم ربط حسابك بنجاح واستيراد الصورة الشخصية الخاصة بحسابك في{' '}
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {detectSocialProvider(currentUser)}
+                </span>{' '}
+                مباشرة. يمكنك الاعتماد عليها أو رفع صورة شخصية أخرى من جهازك أدناه، وإكمال بقية بياناتك الأساسية (العمر، المدينة، المؤهل) ثم اضغط (حفظ التعديلات) ليظهر حسابك للأعضاء.
+              </p>
+            </div>
+          </div>
+
+          <label className="cursor-pointer shrink-0 px-5 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md shadow-rose-500/20 transition-all inline-flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            <span>رفع الصورة الشخصية الآن</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCustomPhotoUpload}
+              className="hidden"
+            />
+          </label>
         </div>
       )}
 

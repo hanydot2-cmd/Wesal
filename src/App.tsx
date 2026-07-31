@@ -23,6 +23,7 @@ import { Sparkles, Heart, Lock, MessagesSquare, ShieldCheck, ArrowLeft } from 'l
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(store.getCurrentUser());
+  const [profiles, setProfiles] = useState<UserProfile[]>(store.getProfiles());
   const [activeTab, setActiveTab] = useState<'home' | 'browse' | 'profile' | 'chats' | 'contact'>('home');
 
   // Modals state
@@ -40,9 +41,14 @@ export function App() {
   useEffect(() => {
     const unsub = store.subscribe(() => {
       setCurrentUser(store.getCurrentUser());
+      setProfiles(store.getProfiles());
     });
     return unsub;
   }, []);
+
+  const publicMembers = profiles.filter(
+    (p) => p.role !== 'admin' && p.id !== 'admin_1' && p.status !== 'suspended' && (!currentUser || p.id !== currentUser.id)
+  );
 
   const handleOpenAuth = (mode: 'login' | 'register') => {
     setAuthModal({ open: true, mode });
@@ -101,17 +107,40 @@ export function App() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {store.getProfiles().slice(0, 4).map((member) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    currentUser={currentUser}
-                    onSelectMember={setSelectedMember}
-                    onOpenAuth={handleOpenAuth}
-                  />
-                ))}
-              </div>
+              {publicMembers.length === 0 ? (
+                <div className="text-center py-12 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-rose-100 dark:border-slate-800 space-y-4 max-w-xl mx-auto shadow-sm">
+                  <div className="w-14 h-14 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
+                      لا يوجد أعضاء مسجلون حالياً
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      كن أول المنضمين لمنصة وصال وسجل حسابك للتعارف والزواج الجاد بخصوصية وأمان.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleOpenAuth('register')}
+                    className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md shadow-rose-500/20 transition-all inline-flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>إنشاء حساب جديد للانضمام</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {publicMembers.slice(0, 4).map((member) => (
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      currentUser={currentUser}
+                      onSelectMember={setSelectedMember}
+                      onOpenAuth={handleOpenAuth}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
 
             <HowItWorks />

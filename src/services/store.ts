@@ -65,14 +65,17 @@ class Store {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        const existingIds = new Set((parsed.profiles || []).map((p: UserProfile) => p.id));
+        // Filter out legacy dummy profiles from previous store state
+        const nonDummyProfiles = (parsed.profiles || []).filter(
+          (p: UserProfile) => !p.id.startsWith('user_male_') && !p.id.startsWith('user_female_')
+        );
+        const existingIds = new Set(nonDummyProfiles.map((p: UserProfile) => p.id));
         let mergedProfiles = [
-          ...(parsed.profiles || []),
+          ...nonDummyProfiles,
           ...INITIAL_MOCK_PROFILES.filter(p => !existingIds.has(p.id))
         ];
 
-        // Ensure all mock profiles use their distinct updated photoUrl
-        const mockPhotoMap = new Map(INITIAL_MOCK_PROFILES.map(p => [p.id, p.photoUrl]));
+        // Ensure admin profile details
         mergedProfiles = mergedProfiles.map(p => {
           if (p.id === 'admin_1' || p.email.toLowerCase() === 'hanydot2@gmail.com') {
             return {
@@ -84,17 +87,16 @@ class Store {
               photoReviewStatus: 'approved'
             };
           }
-          if (mockPhotoMap.has(p.id)) {
-            return {
-              ...p,
-              photoUrl: mockPhotoMap.get(p.id)!
-            };
-          }
           return p;
         });
 
+        let currentUserId = parsed.currentUserId;
+        if (currentUserId && (currentUserId.startsWith('user_male_') || currentUserId.startsWith('user_female_'))) {
+          currentUserId = null;
+        }
+
         return {
-          currentUserId: parsed.currentUserId ?? 'user_male_1',
+          currentUserId: currentUserId ?? null,
           profiles: mergedProfiles.length > 0 ? mergedProfiles : INITIAL_MOCK_PROFILES,
           interactions: parsed.interactions || INITIAL_INTERACTIONS,
           mutualMatches: parsed.mutualMatches || INITIAL_MUTUAL_MATCHES,
@@ -114,7 +116,7 @@ class Store {
     }
 
     return {
-      currentUserId: 'user_male_1', // Default logged-in male user for demo
+      currentUserId: null, // Guests start logged out
       profiles: INITIAL_MOCK_PROFILES,
       interactions: INITIAL_INTERACTIONS,
       mutualMatches: INITIAL_MUTUAL_MATCHES,
@@ -179,7 +181,7 @@ class Store {
       lastActive: new Date().toISOString(),
       isOnline: true,
       gender: profile.gender || 'male',
-      displayName: isAdmin ? 'إدارة منصة وصال (أحمد العتيبي)' : (profile.displayName || 'عضو جديد'),
+      displayName: isAdmin ? 'إدارة منصة وصال' : (profile.displayName || 'عضو جديد'),
       age: profile.age || 35,
       birthDate: profile.birthDate || '1991-01-01',
       nationality: profile.nationality || 'سعودي',
@@ -254,6 +256,13 @@ class Store {
 
   public getProfileById(id: string): UserProfile | undefined {
     return this.state.profiles.find((p) => p.id === id);
+  }
+
+  public isSampleCatalogProfile(emailOrId: string): boolean {
+    const query = emailOrId.trim().toLowerCase();
+    return INITIAL_MOCK_PROFILES.some(
+      (p) => p.id !== 'admin_1' && (p.id.toLowerCase() === query || p.email.toLowerCase() === query)
+    );
   }
 
   private updateOnlineHeartbeats() {

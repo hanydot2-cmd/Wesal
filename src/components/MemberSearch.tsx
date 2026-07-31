@@ -76,6 +76,9 @@ export const MemberSearch: React.FC<MemberSearchProps> = ({
 
   // Filter & Sort Logic
   const filtered = profiles.filter((p) => {
+    // Hide admin accounts from public listings
+    if (p.role === 'admin' || p.id === 'admin_1') return false;
+
     // Hide self if logged in
     if (currentUser && p.id === currentUser.id) return false;
 
@@ -370,21 +373,44 @@ export const MemberSearch: React.FC<MemberSearchProps> = ({
 
       {/* MEMBER GRID */}
       {sorted.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
-          <Sparkles className="w-12 h-12 text-rose-400 mx-auto" />
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-            لم نجد نتائج مطابقة لخيارات البحث
-          </h3>
-          <p className="text-xs text-slate-500">
-            جرب توسيع نطاق العمر أو تغيير الفلاتر للحصول على نتائج أكثر.
-          </p>
-          <button
-            onClick={handleResetFilters}
-            className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 font-bold text-xs"
-          >
-            إعادة ضبط الفلاتر
-          </button>
-        </div>
+        profiles.filter(p => p.role !== 'admin').length === 0 ? (
+          <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center mx-auto">
+              <Users className="w-8 h-8" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                لا يوجد أعضاء مسجلون حالياً
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                أنشئ حسابك الآن وكن أول المسجلين في منصة وصال للتعارف والزواج الجاد بخصوصية تامة.
+              </p>
+            </div>
+            <button
+              onClick={() => onOpenAuth('register')}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md shadow-rose-500/20 transition-all inline-flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>إنشاء حساب جديد للانضمام</span>
+            </button>
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
+            <Sparkles className="w-12 h-12 text-rose-400 mx-auto" />
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+              لم نجد نتائج مطابقة لخيارات البحث
+            </h3>
+            <p className="text-xs text-slate-500">
+              جرب توسيع نطاق العمر أو تغيير الفلاتر للحصول على نتائج أكثر.
+            </p>
+            <button
+              onClick={handleResetFilters}
+              className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 font-bold text-xs"
+            >
+              إعادة ضبط الفلاتر
+            </button>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sorted.map((member) => (

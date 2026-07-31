@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Search, UserPlus, LogIn, MessageCircle, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import { store } from '../services/store';
 
 interface HeroProps {
   onOpenAuth: (mode: 'login' | 'register') => void;
@@ -7,6 +8,25 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOpenAuth, setActiveTab }) => {
+  const [stats, setStats] = useState(store.getAdminStats());
+  const [profiles, setProfiles] = useState(store.getProfiles());
+
+  useEffect(() => {
+    const update = () => {
+      setStats(store.getAdminStats());
+      setProfiles(store.getProfiles());
+    };
+    update();
+    const unsub = store.subscribe(update);
+    return unsub;
+  }, []);
+
+  const realMembersCount = profiles.filter(
+    (p) => p.role !== 'admin' && p.id !== 'admin_1'
+  ).length;
+
+  const realInteractionsCount = stats.likesCount + stats.heartsCount + stats.flowersCount + stats.mutualMatchesCount;
+
   return (
     <section className="relative overflow-hidden py-16 lg:py-24 bg-gradient-to-b from-rose-50/80 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 transition-colors">
       
@@ -86,13 +106,17 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAuth, setActiveTab }) => {
           {/* Statistics Grid Counter */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-10 max-w-4xl mx-auto">
             <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs p-5 rounded-3xl border border-rose-100 dark:border-slate-700 shadow-xs">
-              <div className="text-3xl font-black text-rose-600 dark:text-rose-400 font-serif">+15,000</div>
-              <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mt-1">عضو مسجل باهتمام جاد</div>
+              <div className="text-3xl font-black text-rose-600 dark:text-rose-400 font-serif">
+                {realMembersCount}
+              </div>
+              <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mt-1">عضو مسجل حالياً</div>
             </div>
 
             <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs p-5 rounded-3xl border border-rose-100 dark:border-slate-700 shadow-xs">
-              <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">+3,200</div>
-              <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mt-1">إعجاب ومطابقة ناجحة</div>
+              <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">
+                {realInteractionsCount}
+              </div>
+              <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mt-1">إعجاب ومطابقة حقيقية</div>
             </div>
 
             <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs p-5 rounded-3xl border border-rose-100 dark:border-slate-700 shadow-xs">
