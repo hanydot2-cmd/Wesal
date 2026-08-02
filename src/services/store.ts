@@ -29,6 +29,8 @@ import {
 } from './mockData';
 import { checkForbiddenContent } from '../lib/securityFilter';
 import confetti from 'canvas-confetti';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 
 const STORAGE_KEY = 'wesal_app_data_v2';
 
@@ -912,6 +914,7 @@ class Store {
       this.updateProfile(this.state.currentUserId, { isOnline: false });
     }
     this.setCurrentUserId(null);
+    signOut(auth).catch(() => {});
   }
 
   public getUserConversations(userId: string): Conversation[] {

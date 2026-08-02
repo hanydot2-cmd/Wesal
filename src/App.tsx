@@ -18,10 +18,15 @@ import { ContactUsPage } from './components/ContactUsPage';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminMessagingModal } from './components/AdminMessagingModal';
 import { TermsModal } from './components/TermsModal';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { syncUserToFirestore } from './services/firebaseAuthHelper';
+import { ToastProvider } from './components/Toast';
 
-import { Sparkles, Heart, Lock, MessagesSquare, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Sparkles, Heart, Lock, MessagesSquare, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 
 export function App() {
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(store.getCurrentUser());
   const [profiles, setProfiles] = useState<UserProfile[]>(store.getProfiles());
   const [activeTab, setActiveTab] = useState<'home' | 'browse' | 'profile' | 'chats' | 'contact'>('home');
@@ -39,11 +44,29 @@ export function App() {
   const [showTermsModal, setShowTermsModal] = useState(false);
 
   useEffect(() => {
-    const unsub = store.subscribe(() => {
+    const unsubStore = store.subscribe(() => {
       setCurrentUser(store.getCurrentUser());
       setProfiles(store.getProfiles());
     });
-    return unsub;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          await syncUserToFirestore(firebaseUser);
+        } catch (err: any) {
+          console.info('Firestore sync skipped (offline/local mode enabled)');
+        }
+        store.setCurrentUserId(firebaseUser.uid);
+      } else {
+        store.setCurrentUserId(null);
+      }
+      setIsAuthLoading(false);
+    });
+
+    return () => {
+      unsubStore();
+      unsubscribeAuth();
+    };
   }, []);
 
   const publicMembers = profiles.filter(
@@ -62,8 +85,23 @@ export function App() {
   // Get active user conversations for the "chats" tab
   const conversations = currentUser ? store.getUserConversations(currentUser.id) : [];
 
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <Loader2 className="w-10 h-10 text-rose-600 animate-spin mb-4" />
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 font-serif">
+          جاري التحقق من جلسة Firebase...
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          مشروع وصال (wesal-app-dbfcc)
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 flex flex-col justify-between selection:bg-rose-500 selection:text-white" dir="rtl">
+    <ToastProvider>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 flex flex-col justify-between selection:bg-rose-500 selection:text-white" dir="rtl">
       
       {/* Header */}
       <Header
@@ -358,6 +396,7 @@ export function App() {
       />
 
     </div>
+    </ToastProvider>
   );
 }
 
