@@ -1,403 +1,405 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile } from './types';
-import { store } from './services/store';
+import React, { useState, useEffect, useMemo } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import {
+  Navbar,
+  Footer,
+  AuthModal,
+  ProfileSetupModal,
+  MemberCard,
+  MemberDetailModal,
+  ChatModal,
+  ContactUsModal,
+  AdminChatModal,
+  NotificationsModal,
+  AdminDashboardModal,
+  LegalPagesModal,
+  HeroSection,
+  ExploreFilters
+} from "./components";
+import {
+  UserProfile,
+  InteractionType,
+  CommunicationRequest,
+  AppNotification
+} from "./types";
+import {
+  getAllApprovedMembers,
+  sendInteraction,
+  getUserInteractions,
+  sendCommunicationRequest
+} from "./services/firestoreService";
+import { HeartHandshake, Sparkles, RefreshCw, Users, ShieldAlert } from "lucide-react";
 
-// Components
-import { Header } from './components/Header';
-import { Hero } from './components/Hero';
-import { HowItWorks } from './components/HowItWorks';
-import { SafetySection } from './components/SafetySection';
-import { Footer } from './components/Footer';
-import { AuthModal } from './components/AuthModal';
-import { ProfileForm } from './components/ProfileForm';
-import { MemberSearch } from './components/MemberSearch';
-import { MemberCard } from './components/MemberCard';
-import { MemberDetailModal } from './components/MemberDetailModal';
-import { ChatModal } from './components/ChatModal';
-import { ContactUsPage } from './components/ContactUsPage';
-import { AdminDashboard } from './components/AdminDashboard';
-import { AdminMessagingModal } from './components/AdminMessagingModal';
-import { TermsModal } from './components/TermsModal';
-import { auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { syncUserToFirestore } from './services/firebaseAuthHelper';
-import { ToastProvider } from './components/Toast';
+const AppContent: React.FC = () => {
+  const { firebaseUser, profile, loading } = useAuth();
 
-import { Sparkles, Heart, Lock, MessagesSquare, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
+  // النوافذ المنبثقة
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [contactUsOpen, setContactUsOpen] = useState(false);
+  const [adminChatOpen, setAdminChatOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [adminDashboardOpen, setAdminDashboardOpen] = useState(false);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<string>("about");
 
-export function App() {
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(store.getCurrentUser());
-  const [profiles, setProfiles] = useState<UserProfile[]>(store.getProfiles());
-  const [activeTab, setActiveTab] = useState<'home' | 'browse' | 'profile' | 'chats' | 'contact'>('home');
-
-  // Modals state
-  const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'register' }>({
-    open: false,
-    mode: 'login'
-  });
+  // عضو محدد لعرض التفاصيل
   const [selectedMember, setSelectedMember] = useState<UserProfile | null>(null);
-  const [activeChatPartnerId, setActiveChatPartnerId] = useState<string | null>(null);
-  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
-  const [showAdminChatTicketId, setShowAdminChatTicketId] = useState<string | null>(null);
-  const [showAdminChatModal, setShowAdminChatModal] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
+
+  // محادثة آمنة بعد موافقة الإدارة
+  const [activeChatRequest, setActiveChatRequest] = useState<CommunicationRequest | null>(null);
+
+  // الأعضاء والتفاعلات
+  const [members, setMembers] = useState<UserProfile[]>([]);
+  const [membersLoading, setMembersLoading] = useState<boolean>(true);
+  const [mutualUids, setMutualUids] = useState<Set<string>>(new Set());
+
+  // عداد الإشعارات غير المقروءة
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // الفلاتر
+  const [filters, setFilters] = useState<ExploreFilters>({
+    gender: "all",
+    ageFrom: 18,
+    ageTo: 75,
+    country: "",
+    city: "",
+    maritalStatus: "all",
+    education: "all",
+    wantChildren: "all",
+    smoking: "all"
+  });
+
+  // جلب الأعضاء المعتمدين
+  const fetchMembers = async () => {
+    setMembersLoading(true);
+    try {
+      const list = await getAllApprovedMembers();
+      setMembers(list);
+    } catch (err) {
+      console.warn("Error loading members:", err);
+    } finally {
+      setMembersLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const unsubStore = store.subscribe(() => {
-      setCurrentUser(store.getCurrentUser());
-      setProfiles(store.getProfiles());
-    });
-
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          await syncUserToFirestore(firebaseUser);
-        } catch (err: any) {
-          console.info('Firestore sync skipped (offline/local mode enabled)');
-        }
-        store.setCurrentUserId(firebaseUser.uid);
-      } else {
-        store.setCurrentUserId(null);
-      }
-      setIsAuthLoading(false);
-    });
-
-    return () => {
-      unsubStore();
-      unsubscribeAuth();
-    };
+    fetchMembers();
   }, []);
 
-  const publicMembers = profiles.filter(
-    (p) => p.role !== 'admin' && p.id !== 'admin_1' && p.status !== 'suspended' && (!currentUser || p.id !== currentUser.id)
-  );
+  // جلب التفاعلات عند تسجيل الدخول
+  useEffect(() => {
+    if (firebaseUser) {
+      getUserInteractions(firebaseUser.uid).then((res) => {
+        setMutualUids(new Set(res.mutualUids));
+      });
+    } else {
+      setMutualUids(new Set());
+    }
+  }, [firebaseUser]);
 
-  const handleOpenAuth = (mode: 'login' | 'register') => {
-    setAuthModal({ open: true, mode });
+  // فلترة الأعضاء في الـ Grid
+  const filteredMembers = useMemo(() => {
+    return members.filter((m) => {
+      // حجب الملف الشخصي الحالي من شبكة الأعضاء
+      if (firebaseUser && m.uid === firebaseUser.uid) return false;
+      // حجب الأعضاء المحظورين
+      if (profile?.blockedUsers && profile.blockedUsers.includes(m.uid)) return false;
+
+      // فلتر النوع
+      if (filters.gender !== "all" && m.gender !== filters.gender) return false;
+      // فلتر العمر
+      const mAge = m.age || 25;
+      if (mAge < filters.ageFrom || mAge > filters.ageTo) return false;
+      // فلتر الدولة
+      if (
+        filters.country &&
+        !m.country?.toLowerCase().includes(filters.country.toLowerCase())
+      ) {
+        return false;
+      }
+      // فلتر المدينة
+      if (
+        filters.city &&
+        !m.city?.toLowerCase().includes(filters.city.toLowerCase())
+      ) {
+        return false;
+      }
+      // فلتر الحالة الاجتماعية
+      if (
+        filters.maritalStatus !== "all" &&
+        m.maritalStatus !== filters.maritalStatus
+      ) {
+        return false;
+      }
+      // فلتر المؤهل
+      if (filters.education !== "all" && m.education !== filters.education) {
+        return false;
+      }
+      // فلتر الرغبة في الإنجاب
+      if (
+        filters.wantChildren !== "all" &&
+        m.wantChildren !== filters.wantChildren
+      ) {
+        return false;
+      }
+      // فلتر التدخين
+      if (filters.smoking !== "all" && m.smoking !== filters.smoking) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [members, firebaseUser, profile, filters]);
+
+  // إرسال تفاعل (إعجاب، قلب، وردة)
+  const handleSendInteraction = async (toMember: UserProfile, type: InteractionType) => {
+    if (!firebaseUser || !profile) {
+      setAuthModalOpen(true);
+      return;
+    }
+
+    try {
+      const res = await sendInteraction(
+        firebaseUser.uid,
+        profile.displayName || "عضو",
+        profile.photoURL || "",
+        toMember.uid,
+        type
+      );
+
+      if (res.mutual) {
+        setMutualUids((prev) => new Set([...prev, toMember.uid]));
+        alert(`🎉 مبروك! إعجاب متبادل بينك وبين (${toMember.displayName}). يمكنكما الآن طلب بدء التواصل من زر (طلب بدء التواصل) في بطاقته.`);
+      } else {
+        alert(`✅ تم إرسال (${type === "like" ? "إعجاب" : type === "heart" ? "قلب" : "باقة ورد"}) إلى (${toMember.displayName}) بنجاح!`);
+      }
+    } catch (error) {
+      alert("حدث خطأ أثناء إرسال التفاعل. يرجى المحاولة لاحقاً.");
+    }
   };
 
-  const handleLogout = () => {
-    store.logout();
-    setActiveTab('home');
+  // طلب بدء التواصل (بعد الإعجاب المتبادل)
+  const handleRequestCommunication = async (toMember: UserProfile) => {
+    if (!firebaseUser || !profile) {
+      setAuthModalOpen(true);
+      return;
+    }
+
+    try {
+      await sendCommunicationRequest(
+        firebaseUser.uid,
+        profile.displayName || "عضو",
+        profile.photoURL || "",
+        toMember.uid,
+        toMember.displayName || "عضو",
+        toMember.photoURL || ""
+      );
+
+      alert(`✅ تم إرسال طلب بدء التواصل مع (${toMember.displayName}) إلى إدارة وصال للمراجعة والموافقة وفق ضوابط الزواج الشرعي.`);
+    } catch (error) {
+      alert("حدث خطأ أثناء إرسال طلب التواصل. يرجى المحاولة لاحقاً.");
+    }
   };
 
-  // Get active user conversations for the "chats" tab
-  const conversations = currentUser ? store.getUserConversations(currentUser.id) : [];
-
-  if (isAuthLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center" dir="rtl">
-        <Loader2 className="w-10 h-10 text-rose-600 animate-spin mb-4" />
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 font-serif">
-          جاري التحقق من جلسة Firebase...
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          مشروع وصال (wesal-app-dbfcc)
-        </p>
-      </div>
-    );
-  }
+  // فتح صفحة قانونية معينة
+  const handleOpenLegal = (tab = "about") => {
+    setLegalTab(tab);
+    setLegalModalOpen(true);
+  };
 
   return (
-    <ToastProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 flex flex-col justify-between selection:bg-rose-500 selection:text-white" dir="rtl">
-      
-      {/* Header */}
-      <Header
-        currentUser={currentUser}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenAuth={handleOpenAuth}
-        onOpenAdmin={() => setShowAdminDashboard(true)}
+    <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 font-sans selection:bg-rose-100 selection:text-rose-900">
+      {/* شريط التنقل العلوي */}
+      <Navbar
+        onOpenAuth={() => setAuthModalOpen(true)}
+        onOpenProfileSetup={() => setProfileModalOpen(true)}
+        onOpenAdminDashboard={() => setAdminDashboardOpen(true)}
+        onOpenContactUs={() => setContactUsOpen(true)}
+        onOpenNotifications={() => setNotificationsOpen(true)}
+        onOpenAdminChat={() => setAdminChatOpen(true)}
+        onOpenLegal={handleOpenLegal}
+        unreadCount={unreadCount}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 pb-16">
-        
-        {/* TAB 1: HOME */}
-        {activeTab === 'home' && (
-          <div className="space-y-16">
-            <Hero
-              onOpenAuth={handleOpenAuth}
-              setActiveTab={setActiveTab}
-            />
+      {/* قسم الهيرو وشريط البحث */}
+      <HeroSection
+        filters={filters}
+        onFilterChange={setFilters}
+        onResetFilters={() =>
+          setFilters({
+            gender: "all",
+            ageFrom: 18,
+            ageTo: 75,
+            country: "",
+            city: "",
+            maritalStatus: "all",
+            education: "all",
+            wantChildren: "all",
+            smoking: "all"
+          })
+        }
+        totalMembersCount={members.length}
+        onOpenAuth={() => setAuthModalOpen(true)}
+        isLoggedIn={Boolean(firebaseUser)}
+      />
 
-            {/* Featured Members Showcase */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest">
-                    <Sparkles className="w-4 h-4" />
-                    اعضاء جدد يبحثون عن الزواج الشرعي
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-serif mt-1">
-                    أحدث الأعضاء المتواجدين على وصال
-                  </h2>
-                </div>
+      {/* شبكة الأعضاء */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+          <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+            <Users className="w-6 h-6 text-rose-600" />
+            <span>الأعضاء المتاحون للتعارف والزواج الجاد</span>
+            <span className="text-xs font-bold bg-rose-100 text-rose-800 px-3 py-1 rounded-full">
+              {filteredMembers.length} عضو
+            </span>
+          </h2>
 
-                <button
-                  onClick={() => setActiveTab('browse')}
-                  className="px-5 py-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold text-xs hover:bg-rose-100 border border-rose-200/80 dark:border-rose-800 flex items-center gap-2 self-start sm:self-auto"
-                >
-                  <span>عرض جميع الأعضاء</span>
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-              </div>
+          <button
+            onClick={fetchMembers}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-gray-200 text-xs font-bold text-gray-700 transition-all shadow-xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${membersLoading ? "animate-spin text-rose-600" : ""}`} />
+            <span>تحديث القائمة</span>
+          </button>
+        </div>
 
-              {publicMembers.length === 0 ? (
-                <div className="text-center py-12 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-rose-100 dark:border-slate-800 space-y-4 max-w-xl mx-auto shadow-sm">
-                  <div className="w-14 h-14 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center mx-auto">
-                    <Sparkles className="w-7 h-7" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
-                      لا يوجد أعضاء مسجلون حالياً
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      كن أول المنضمين لمنصة وصال وسجل حسابك للتعارف والزواج الجاد بخصوصية وأمان.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleOpenAuth('register')}
-                    className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold text-xs shadow-md shadow-rose-500/20 transition-all inline-flex items-center gap-2"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>إنشاء حساب جديد للانضمام</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {publicMembers.slice(0, 4).map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      currentUser={currentUser}
-                      onSelectMember={setSelectedMember}
-                      onOpenAuth={handleOpenAuth}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <HowItWorks />
-            <SafetySection />
+        {membersLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400 space-y-3">
+            <RefreshCw className="w-8 h-8 animate-spin text-rose-600" />
+            <p className="text-sm font-bold text-gray-600">جارٍ جلب قائمة الأعضاء من قاعدة البيانات...</p>
           </div>
-        )}
-
-        {/* TAB 2: BROWSE & SEARCH */}
-        {activeTab === 'browse' && (
-          <MemberSearch
-            currentUser={currentUser}
-            onSelectMember={setSelectedMember}
-            onOpenAuth={handleOpenAuth}
-            onGoHome={() => setActiveTab('home')}
-          />
-        )}
-
-        {/* TAB 3: MY PROFILE */}
-        {activeTab === 'profile' && (
-          <div className="py-8 px-4 sm:px-6">
-            {currentUser ? (
-              <ProfileForm
-                currentUser={currentUser}
-                onSaved={() => {
-                  // Alert or toast
-                }}
+        ) : filteredMembers.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-rose-100 p-8 shadow-sm max-w-2xl mx-auto space-y-4">
+            <div className="w-16 h-16 bg-rose-50 rounded-2xl mx-auto flex items-center justify-center text-rose-600">
+              <HeartHandshake className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">
+              لا توجد نتائج تطابق خيارات التصفية الحالية
+            </h3>
+            <p className="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">
+              يمكنك تجربة توسيع نطاق العمر أو اختيار "الجميع" في الحالة الاجتماعية والمؤهل، أو النقر على زر إعادة ضبط الفلاتر.
+            </p>
+            <button
+              onClick={() =>
+                setFilters({
+                  gender: "all",
+                  ageFrom: 18,
+                  ageTo: 75,
+                  country: "",
+                  city: "",
+                  maritalStatus: "all",
+                  education: "all",
+                  wantChildren: "all",
+                  smoking: "all"
+                })
+              }
+              className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-200 transition-all"
+            >
+              إعادة ضبط الفلاتر وعرض الجميع
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredMembers.map((member) => (
+              <MemberCard
+                key={member.uid}
+                member={member}
+                isMutual={mutualUids.has(member.uid)}
+                onSendInteraction={handleSendInteraction}
+                onRequestCommunication={handleRequestCommunication}
+                onOpenDetail={(m) => setSelectedMember(m)}
+                currentUserId={firebaseUser?.uid}
               />
-            ) : (
-              <div className="max-w-md mx-auto my-12 text-center bg-white dark:bg-slate-900 p-8 rounded-3xl border border-rose-100 dark:border-slate-800 shadow-xl space-y-4">
-                <Lock className="w-12 h-12 text-rose-500 mx-auto" />
-                <h2 className="text-xl font-bold font-serif">الوصول إلى الملف الشخصي</h2>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  يرجى تسجيل الدخول أو إنشاء حساب جديد لتعديل ملفك الشخصي ومواصفات الشريك المطلوبة.
-                </p>
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => handleOpenAuth('login')}
-                    className="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-bold text-xs"
-                  >
-                    تسجيل الدخول
-                  </button>
-                  <button
-                    onClick={() => handleOpenAuth('register')}
-                    className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs"
-                  >
-                    إنشاء حساب
-                  </button>
-                </div>
-              </div>
-            )}
+            ))}
           </div>
         )}
-
-        {/* TAB 4: PRIVATE CHATS */}
-        {activeTab === 'chats' && (
-          <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-6">
-            {!currentUser ? (
-              <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-3">
-                <Lock className="w-12 h-12 text-rose-500 mx-auto" />
-                <h3 className="text-lg font-bold">المحادثات الخاصة</h3>
-                <p className="text-xs text-slate-500">سجل الدخول لاستعراض ومتابعة محادثاتك المفتوحة.</p>
-                <button
-                  onClick={() => handleOpenAuth('login')}
-                  className="px-6 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs"
-                >
-                  تسجيل الدخول
-                </button>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-rose-100 dark:border-slate-800 shadow-xl space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-                  <div className="flex items-center gap-2">
-                    <MessagesSquare className="w-6 h-6 text-rose-500" />
-                    <h2 className="text-xl font-black font-serif">المحادثات الخاصة المعتمدة</h2>
-                  </div>
-                  <span className="text-xs font-bold px-3 py-1 bg-rose-50 text-rose-600 rounded-full">
-                    {conversations.length} محادثة
-                  </span>
-                </div>
-
-                {conversations.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400 space-y-2">
-                    <Heart className="w-10 h-10 mx-auto text-rose-300" />
-                    <p className="text-xs font-semibold">لا توجد محادثات مفتوحة حالياً.</p>
-                    <p className="text-[11px] text-slate-500">
-                      تفتح المحادثات بعد حدوث إعجاب متبادل وموافقة إدارة المنصة على طلب التواصل.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {conversations.map((conv) => {
-                      const partnerId = conv.participants[0] === currentUser.id ? conv.participants[1] : conv.participants[0];
-                      const partner = store.getProfileById(partnerId);
-                      if (!partner) return null;
-
-                      return (
-                        <div
-                          key={conv.id}
-                          onClick={() => setActiveChatPartnerId(partnerId)}
-                          className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-rose-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 cursor-pointer transition-colors flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={partner.photoUrl}
-                              alt={partner.displayName}
-                              className="w-12 h-12 rounded-2xl object-cover ring-2 ring-rose-500/20"
-                            />
-                            <div>
-                              <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                                <span>{partner.displayName}</span>
-                                <span className="text-xs text-rose-600 font-normal">
-                                  ({partner.age} سنة - {partner.city})
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-500 truncate mt-0.5">
-                                {conv.lastMessage || 'محادثة آمنة بدأت حديثاً...'}
-                              </p>
-                            </div>
-                          </div>
-
-                          <button className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs shadow-xs">
-                            فتح المحادثة 💬
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 5: CONTACT US & SUPPORT */}
-        {activeTab === 'contact' && (
-          <ContactUsPage
-            currentUser={currentUser}
-            onOpenAdminChat={(ticketId) => {
-              setShowAdminChatTicketId(ticketId);
-              setShowAdminChatModal(true);
-            }}
-          />
-        )}
-
       </main>
 
-      {/* Footer */}
+      {/* التذييل */}
       <Footer
-        setActiveTab={setActiveTab}
-        onOpenTerms={() => setShowTermsModal(true)}
+        onOpenLegal={handleOpenLegal}
+        onOpenContactUs={() => setContactUsOpen(true)}
       />
 
-      {/* MODALS */}
-
-      {/* Auth Modal */}
-      {authModal.open && (
-        <AuthModal
-          isOpen={true}
-          mode={authModal.mode}
-          initialMode={authModal.mode}
-          onClose={() => setAuthModal({ open: false, mode: 'login' })}
-          onOpenTerms={() => setShowTermsModal(true)}
-          onSuccess={() => {
-            setAuthModal({ open: false, mode: 'login' });
-            setActiveTab('profile');
-          }}
-        />
-      )}
-
-      {/* Member Detail Modal */}
-      {selectedMember && (
-        <MemberDetailModal
-          member={selectedMember}
-          currentUser={currentUser}
-          onClose={() => setSelectedMember(null)}
-          onGoHome={() => {
-            setSelectedMember(null);
-            setActiveTab('home');
-          }}
-          onOpenChat={(pId) => setActiveChatPartnerId(pId)}
-          onOpenAuth={handleOpenAuth}
-        />
-      )}
-
-      {/* Direct Private Chat Modal */}
-      {activeChatPartnerId && currentUser && (
-        <ChatModal
-          partnerId={activeChatPartnerId}
-          currentUser={currentUser}
-          onClose={() => setActiveChatPartnerId(null)}
-        />
-      )}
-
-      {/* Admin Dashboard */}
-      {showAdminDashboard && (
-        <AdminDashboard onClose={() => setShowAdminDashboard(false)} />
-      )}
-
-      {/* Admin Private Messaging Modal */}
-      {showAdminChatModal && currentUser && (
-        <AdminMessagingModal
-          currentUser={currentUser}
-          ticketId={showAdminChatTicketId || undefined}
-          onClose={() => {
-            setShowAdminChatModal(false);
-            setShowAdminChatTicketId(null);
-          }}
-        />
-      )}
-
-      {/* Terms & Privacy Modal */}
-      <TermsModal
-        isOpen={showTermsModal}
-        onClose={() => setShowTermsModal(false)}
+      {/* 1. نافذة تسجيل الدخول / إنشاء حساب */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onOpenLegal={handleOpenLegal}
       />
 
+      {/* 2. نافذة إعداد الملف الشخصي وحذف الحساب */}
+      <ProfileSetupModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
+
+      {/* 3. نافذة تفاصيل العضو والإبلاغ والحظر */}
+      <MemberDetailModal
+        isOpen={Boolean(selectedMember)}
+        member={selectedMember}
+        onClose={() => setSelectedMember(null)}
+        isMutual={selectedMember ? mutualUids.has(selectedMember.uid) : false}
+        onSendInteraction={handleSendInteraction}
+        onRequestCommunication={handleRequestCommunication}
+        currentUserId={firebaseUser?.uid}
+      />
+
+      {/* 4. نافذة المحادثة الآمنة */}
+      <ChatModal
+        isOpen={Boolean(activeChatRequest)}
+        onClose={() => setActiveChatRequest(null)}
+        request={activeChatRequest}
+        currentUserId={firebaseUser?.uid || ""}
+      />
+
+      {/* 5. نافذة تواصل معنا (Contact Us) */}
+      <ContactUsModal
+        isOpen={contactUsOpen}
+        onClose={() => setContactUsOpen(false)}
+      />
+
+      {/* 6. نافذة مراسلة الإدارة */}
+      <AdminChatModal
+        isOpen={adminChatOpen}
+        onClose={() => setAdminChatOpen(false)}
+      />
+
+      {/* 7. نافذة الإشعارات والتنبيهات */}
+      <NotificationsModal
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onSelectNotification={(notif) => {
+          // إذا كان الإشعار عن موافقة تواصل يمكننا مستقبلاً فتح المحادثة
+          setNotificationsOpen(false);
+        }}
+      />
+
+      {/* 8. نافذة لوحة التحكم للإدارة */}
+      <AdminDashboardModal
+        isOpen={adminDashboardOpen}
+        onClose={() => setAdminDashboardOpen(false)}
+      />
+
+      {/* 9. نافذة السياسات والضوابط القانونية */}
+      <LegalPagesModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalTab}
+        onOpenContactUs={() => {
+          setLegalModalOpen(false);
+          setContactUsOpen(true);
+        }}
+      />
     </div>
-    </ToastProvider>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
-
-export default App;

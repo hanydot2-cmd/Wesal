@@ -1,6 +1,6 @@
 {
   "name": "Wesal",
-  "description": "منصة آمنة وموثوقة للتعارف الجاد بهدف الزواج وفق الضوابط والخصوصية",
+  "description": "وصال – للتعارف والزواج الجاد | خطوتك نحو شريك حياة مناسب",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

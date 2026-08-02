@@ -1,136 +1,131 @@
-import React from 'react';
-import { Heart, ShieldCheck, Lock, CheckCircle2 } from 'lucide-react';
+import React from "react";
+import { HeartHandshake, ShieldCheck, Lock, AlertTriangle, FileText } from "lucide-react";
 
 interface FooterProps {
-  setActiveTab: (tab: string) => void;
-  onOpenTerms: () => void;
+  onOpenLegal: (tab: string) => void;
+  onOpenContactUs: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ setActiveTab, onOpenTerms }) => {
+export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onOpenContactUs }) => {
   return (
-    <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 pt-16 pb-12 mt-20">
+    <footer className="bg-gray-900 text-white pt-16 pb-12 border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-slate-800">
-          
-          {/* Brand Col */}
-          <div className="md:col-span-1 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-gray-800">
+          {/* قسم الشعار ونبذة */}
+          <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
-                <Heart className="w-5 h-5 fill-white" />
+              <div className="w-11 h-11 rounded-2xl bg-rose-600 flex items-center justify-center text-white shadow-lg">
+                <HeartHandshake className="w-6 h-6" />
               </div>
-              <span className="text-2xl font-black text-white font-serif tracking-tight"> وصال </span>
+              <div>
+                <h3 className="text-xl font-black tracking-tight">وصال</h3>
+                <p className="text-xs text-rose-300 font-semibold">للتعارف والزواج الجاد</p>
+              </div>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              منصة آمنة وموثوقة مخصصة للتعارف الجاد بهدف الزواج الشرعي والاستقرار الأسري وفق أرقى معايير الخصوصية والأمان.
+            <p className="text-sm text-gray-400 leading-relaxed">
+              «خطوتك نحو شريك حياة مناسب» – منصة وصال مخصصة للتعارف الجاد بهدف الزواج الشرعي فقط، وفق ضوابط محترمة وآمنة تحمي خصوصيتك.
             </p>
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-800/50">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
-              <span>بيئة آمنة 100% خالية من العلاقات غير الجادة</span>
-            </div>
           </div>
 
-          {/* Quick Links */}
+          {/* روابط سريعة والصفحات القانونية */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">روابط سريعة</h4>
-            <ul className="space-y-2 text-xs">
+            <h4 className="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4 text-rose-400" />
+              <span>الصفحات القانونية والسياسات</span>
+            </h4>
+            <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <button
-                  onClick={() => setActiveTab('home')}
-                  className="hover:text-rose-400 transition-colors"
+                  onClick={() => onOpenLegal("terms")}
+                  className="hover:text-rose-400 transition-all text-right"
                 >
-                  الرئيسية
+                  • شروط الاستخدام
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('browse')}
-                  className="hover:text-rose-400 transition-colors"
+                  onClick={() => onOpenLegal("privacy")}
+                  className="hover:text-rose-400 transition-all text-right"
                 >
-                  تصفح الأعضاء
+                  • سياسة الخصوصية
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('how-it-works')}
-                  className="hover:text-rose-400 transition-colors"
+                  onClick={() => onOpenLegal("rules")}
+                  className="hover:text-rose-400 transition-all text-right"
                 >
-                  طريقة عمل المنصة
+                  • قواعد الاستخدام
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('safety')}
-                  className="hover:text-rose-400 transition-colors"
+                  onClick={() => onOpenLegal("content_photo")}
+                  className="hover:text-rose-400 transition-all text-right"
                 >
-                  الأمان والخصوصية
+                  • سياسة المحتوى والصور
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Policies & Help */}
+          {/* سياسات الأمان والحظر */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">الدعم والشروط</h4>
-            <ul className="space-y-2 text-xs">
+            <h4 className="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-rose-400" />
+              <span>الأمان وحماية الخصوصية</span>
+            </h4>
+            <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <button
-                  onClick={() => setActiveTab('contact')}
-                  className="hover:text-rose-400 transition-colors"
+                  onClick={() => onOpenLegal("no_share")}
+                  className="hover:text-rose-400 transition-all text-right"
                 >
-                  تواصل معنا – Contact Us
+                  • سياسة منع مشاركة البيانات الشخصية
                 </button>
               </li>
               <li>
                 <button
-                  onClick={onOpenTerms}
-                  className="hover:text-rose-400 transition-colors"
+                  onClick={() => onOpenLegal("block_report")}
+                  className="hover:text-rose-400 transition-all text-right"
                 >
-                  شروط الاستخدام وسياسة الخصوصية
+                  • سياسة الحظر والإبلاغ
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('contact')}
-                  className="hover:text-rose-400 transition-colors"
+                  onClick={() => onOpenLegal("delete_account")}
+                  className="hover:text-rose-400 transition-all text-right"
                 >
-                  طلب حذف البيانات أو الحساب
+                  • طلب حذف الحساب والبيانات
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Security Standards */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">ضوابط وصال</h4>
-            <div className="space-y-2 text-xs text-slate-400">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                <span>مراجعة إدارية لجميع طلبات التواصل</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                <span>منع مشاركة أرقام الهواتف أو الروابط</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                <span>اعتماد بشري للصور الشخصية</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                <span>تشفير كامل للبيانات والمحادثات</span>
-              </div>
-            </div>
+          {/* تواصل معنا والدعم */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center gap-2">
+              <Lock className="w-4 h-4 text-rose-400" />
+              <span>الدعم الفني والمساعدة</span>
+            </h4>
+            <p className="text-sm text-gray-400">
+              فريق وصال متاح للرد على جميع استفساراتك ومساعدتك في حل أي مشكلة تواجهك.
+            </p>
+            <button
+              onClick={onOpenContactUs}
+              className="w-full py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-sm font-bold border border-gray-700 transition-all flex items-center justify-center gap-2"
+            >
+              <span>تواصل معنا (Contact Us)</span>
+            </button>
           </div>
-
         </div>
 
-        {/* Bottom copyright */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} وصال – جميع الحقوق محفوظة. للتعارف والزواج الجاد فقط.</p>
-          <div className="flex items-center gap-4">
-            <span>النسخة 1.0.0</span>
-            <span className="w-1 h-1 rounded-full bg-slate-700"></span>
-            <span className="text-emerald-400 font-semibold">الموقع متصل وآمن</span>
+        {/* الحقوق */}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
+          <p>© {new Date().getFullYear()} وصال – للتعارف والزواج الجاد. جميع الحقوق محفوظة.</p>
+          <div className="flex items-center gap-2 text-rose-400">
+            <span>منصة مخصصة للزواج الشرعي فقط</span>
           </div>
         </div>
       </div>
