@@ -41,8 +41,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     try {
       const { logoutUser } = await import("../services");
       await logoutUser();
+      window.location.reload();
     } catch (error) {
       console.error("Logout error:", error);
+      window.location.reload();
     }
   };
 

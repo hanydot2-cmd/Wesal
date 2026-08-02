@@ -126,19 +126,17 @@ export async function syncUserToFirestore(firebaseUser: User): Promise<UserProfi
 
 /**
  * تسجيل الدخول الحقيقي بواسطة Google
- * على أجهزة الكمبيوتر signInWithPopup، وإذا فشل بسبب حظر أو متصفح هاتف نستخدم signInWithRedirect
+ * مع إجبار Google دائماً على إظهار شاشة اختيار الحساب (prompt: select_account) لتسهيل تبديل الحسابات
  */
 export async function loginWithGoogle(): Promise<User | null> {
-  // فحص ما إذا كنا على هاتف أو شاشة صغيرة أو متصفح مضمن
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-
-  if (isMobile) {
-    await signInWithRedirect(auth, googleProvider);
-    return null;
-  }
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({
+    prompt: "select_account"
+  });
 
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    // نحاول أولاً باستخدام Popup على جميع الأجهزة (حتى الهواتف) لضمان ظهور نافذة اختيار الحساب
+    const result = await signInWithPopup(auth, provider);
     if (result && result.user) {
       await syncUserToFirestore(result.user);
       return result.user;
@@ -146,9 +144,9 @@ export async function loginWithGoogle(): Promise<User | null> {
     return null;
   } catch (error: any) {
     const code = error?.code || "";
-    // إذا كان البوب أب محظوراً أو أُغلق بسبب بيئة iframe، نحول فوراً إلى Redirect
+    // إذا كان البوب أب محظوراً أو أُغلق بسبب بيئة iframe، نحول إلى Redirect
     if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithRedirect(auth, provider);
       return null;
     }
     throw error;
@@ -205,8 +203,13 @@ export async function logoutUser(): Promise<void> {
   if (auth.currentUser) {
     try {
       const docRef = doc(db, "users", auth.currentUser.uid);
-      await setDoc(docRef, { isOnline: false, lastSeen: serverTimestamp() }, { merge: true });
+      // تنفيذ التحديث في الخلفية دون انتظار (حتى لا يتعطل أو يتأخر تسجيل الخروج أبدًا)
+      setDoc(docRef, { isOnline: false, lastSeen: serverTimestamp() }, { merge: true }).catch(() => {});
     } catch (_) {}
   }
   await signOut(auth);
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch (_) {}
 }

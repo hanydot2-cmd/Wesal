@@ -8,10 +8,11 @@ import {
   CheckCircle2,
   Trash2,
   ShieldAlert,
-  RefreshCw
+  RefreshCw,
+  LogOut
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { updateProfileData, uploadProfilePhoto } from "../services";
+import { updateProfileData, uploadProfilePhoto, logoutUser } from "../services";
 import {
   Gender,
   EducationLevel,
@@ -27,6 +28,16 @@ interface ProfileSetupModalProps {
 
 export const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, onClose }) => {
   const { firebaseUser, profile, refreshProfile } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      window.location.reload();
+    }
+  };
 
   const [gender, setGender] = useState<Gender>(profile?.gender || "male");
   const [firstName, setFirstName] = useState(profile?.firstName || "");
@@ -639,6 +650,24 @@ export const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, on
             </button>
           </div>
         </form>
+
+        {/* قسم تسجيل الخروج وتبديل الحساب */}
+        <div className="p-4 bg-gray-50 border-t border-gray-200 shrink-0 text-right flex items-center justify-between">
+          <div>
+            <h4 className="text-xs font-bold text-gray-800">تسجيل الخروج أو تبديل الحساب</h4>
+            <p className="text-[11px] text-gray-500">
+              يمكنك الخروج الآن لتجربة الدخول بحساب Google آخر أو بريد إلكتروني مختلف.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold flex items-center gap-1.5"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>تسجيل الخروج</span>
+          </button>
+        </div>
 
         {/* 6. قسم حذف الحساب (Section 25) */}
         <div className="p-5 bg-red-50/50 border-t border-red-100 shrink-0 text-right">
