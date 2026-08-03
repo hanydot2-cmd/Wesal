@@ -53,62 +53,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (user) {
         setFirebaseUser(user);
-        // سباق أمان لمدة ثانيتين حتى لا يتوقف التطبيق أبداً على "جاري الاتصال بنظام Firebase"
+
+        // 1. إظهار الحساب والملف الشخصي فوراً (0ms delay) من الكاش أو القيم المبدئية
+        const CACHE_KEY = `wisal_profile_${user.uid}`;
+        let immediateProfile: UserProfile | null = null;
         try {
-          const timeoutPromise = new Promise<UserProfile | null>((resolve) =>
-            setTimeout(() => resolve(null), 2500)
-          );
-          const syncPromise = syncUserToFirestore(user);
-
-          const synced = await Promise.race([syncPromise, timeoutPromise]);
-          if (!isMounted) return;
-
-          if (synced) {
-            setProfile(synced);
-          } else {
-            // في حال تأخر الاستجابة السحابية، ننشئ ملف قراءة مؤقت ونستمر بالعمل
-            setProfile({
-              uid: user.uid,
-              displayName: user.displayName || "عضو وصال",
-              email: user.email || "",
-              photoURL: user.photoURL || "",
-              providerId: user.providerData[0]?.providerId || "password",
-              role: user.email === "hanydot2@gmail.com" ? "admin" : "user",
-              profileCompleted: false,
-              accountStatus: "active",
-              createdAt: new Date(),
-              lastLoginAt: new Date(),
-              isOnline: true
-            });
-            // مزامنة في الخلفية دون تعطيل واجهة المستخدم
-            syncPromise.then((p) => {
-              if (isMounted && p) setProfile(p);
-            }).catch(() => {});
+          const cachedStr = localStorage.getItem(CACHE_KEY);
+          if (cachedStr) {
+            immediateProfile = JSON.parse(cachedStr);
           }
-        } catch (error) {
-          console.error("Auth state profile sync error:", error);
-          if (isMounted) {
-            setProfile({
-              uid: user.uid,
-              displayName: user.displayName || "عضو وصال",
-              email: user.email || "",
-              photoURL: user.photoURL || "",
-              providerId: user.providerData[0]?.providerId || "password",
-              role: user.email === "hanydot2@gmail.com" ? "admin" : "user",
-              profileCompleted: false,
-              accountStatus: "active",
-              createdAt: new Date(),
-              lastLoginAt: new Date(),
-              isOnline: true
-            });
-          }
+        } catch (_) {}
+
+        if (!immediateProfile) {
+          immediateProfile = {
+            uid: user.uid,
+            displayName: user.displayName || "عضو وصال",
+            email: user.email || "",
+            photoURL: user.photoURL || "",
+            providerId: user.providerData[0]?.providerId || "password",
+            role: user.email === "hanydot2@gmail.com" ? "admin" : "user",
+            profileCompleted: false,
+            accountStatus: "active",
+            createdAt: new Date(),
+            lastLoginAt: new Date(),
+            isOnline: true
+          };
         }
+
+        setProfile(immediateProfile);
+        setLoading(false);
+
+        // 2. تحديث ومزامنة البيانات مع Firestore في الخلفية دون تعطيل الشاشة أو تأخير الدخول
+        syncUserToFirestore(user)
+          .then((synced) => {
+            if (isMounted && synced) {
+              setProfile(synced);
+            }
+          })
+          .catch((error) => {
+            console.warn("Background Firestore sync note:", error);
+          });
       } else {
         setFirebaseUser(null);
         setProfile(null);
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
     return () => {

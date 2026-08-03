@@ -63,31 +63,63 @@ export function getArabicAuthError(error: any): string {
 }
 
 /**
- * مزامنة بيانات حساب المستخدم الحقيقي في Firestore
+ * مزامنة بيانات حساب المستخدم الحقيقي في Firestore بشكل فوري دون تأخير (Non-Blocking Sync)
  */
 export async function syncUserToFirestore(firebaseUser: User): Promise<UserProfile> {
   const docRef = doc(db, "users", firebaseUser.uid);
   const isAdminEmail = firebaseUser.email === "hanydot2@gmail.com";
+  const CACHE_KEY = `wisal_profile_${firebaseUser.uid}`;
 
+  // 1. محاولة جلب الملف المخزن محلياً كنسخة احتياطية سريعة
+  let cachedProfile: UserProfile | null = null;
   try {
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
+    const cachedStr = localStorage.getItem(CACHE_KEY);
+    if (cachedStr) {
+      cachedProfile = JSON.parse(cachedStr);
+    }
+  } catch (_) {}
+
+  // 2. سباق سريع جداً (1500 ملي ثانية) لجلب مستند Firestore دون أي تأخير لعملية الدخول
+  try {
+    const getDocPromise = getDoc(docRef);
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), 1500)
+    );
+
+    const snap = await Promise.race([getDocPromise, timeoutPromise]);
+
+    if (snap && snap.exists()) {
       const existingData = snap.data() as UserProfile;
-      // تحديث وقت تسجيل الدخول وحفظ البيانات الأساسية دون المساس بالـ UID أو الدور
-      await setDoc(
+      const updatedProfile: UserProfile = {
+        ...existingData,
+        email: firebaseUser.email || existingData.email,
+        displayName: firebaseUser.displayName || existingData.displayName || "عضو وصال",
+        photoURL: firebaseUser.photoURL || existingData.photoURL || "",
+        role: isAdminEmail ? "admin" : existingData.role || "user",
+        lastLoginAt: new Date(),
+        isOnline: true
+      };
+
+      // تحديث البيانات في الخلفية دون انتظار أو تعطيل للمستخدم
+      setDoc(
         docRef,
         {
-          email: firebaseUser.email || existingData.email,
-          displayName: firebaseUser.displayName || existingData.displayName || "عضو وصال",
-          photoURL: firebaseUser.photoURL || existingData.photoURL || "",
-          role: isAdminEmail ? "admin" : existingData.role || "user",
+          email: updatedProfile.email,
+          displayName: updatedProfile.displayName,
+          photoURL: updatedProfile.photoURL,
+          role: updatedProfile.role,
           lastLoginAt: serverTimestamp(),
           isOnline: true
         },
         { merge: true }
-      );
-      return { ...existingData, lastLoginAt: new Date(), isOnline: true };
-    } else {
+      ).catch(() => {});
+
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(updatedProfile));
+      } catch (_) {}
+
+      return updatedProfile;
+    } else if (snap && !snap.exists()) {
       // إنشاء ملف مستخدم جديد
       const newProfile: Partial<UserProfile> = {
         uid: firebaseUser.uid,
@@ -102,26 +134,57 @@ export async function syncUserToFirestore(firebaseUser: User): Promise<UserProfi
         lastLoginAt: serverTimestamp(),
         isOnline: true
       };
-      await setDoc(docRef, newProfile);
-      return newProfile as UserProfile;
+
+      // حفظ في الخلفية فوراً دون تعطيل
+      setDoc(docRef, newProfile).catch(() => {});
+
+      const resultProfile = {
+        ...newProfile,
+        createdAt: new Date(),
+        lastLoginAt: new Date()
+      } as UserProfile;
+
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(resultProfile));
+      } catch (_) {}
+
+      return resultProfile;
     }
   } catch (error) {
-    console.warn("تنبيه: تأخر أو تعذر الاتصال بـ Firestore لحفظ الحساب (سيعمل في وضع القراءة):", error);
-    // إرجاع ملف افتراضي مؤقت حتى لا يتوقف تسجيل الدخول في حال بطء الشبكة
-    return {
-      uid: firebaseUser.uid,
-      displayName: firebaseUser.displayName || "عضو وصال",
-      email: firebaseUser.email || "",
-      photoURL: firebaseUser.photoURL || "",
-      providerId: firebaseUser.providerData[0]?.providerId || "password",
-      role: isAdminEmail ? "admin" : "user",
-      profileCompleted: false,
-      accountStatus: "active",
-      createdAt: new Date(),
-      lastLoginAt: new Date(),
-      isOnline: true
-    };
+    console.warn("تنبيه: تأخر أو تعذر الاتصال بـ Firestore لحفظ الحساب:", error);
   }
+
+  // في حال تأخر الشبكة (> 1500ms) وكان لدينا ملف في الكاش، نرجعه فوراً
+  if (cachedProfile) {
+    getDoc(docRef).then((s) => {
+      if (s.exists()) {
+        const d = s.data() as UserProfile;
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch (_) {}
+      }
+    }).catch(() => {});
+    return cachedProfile;
+  }
+
+  // إرجاع ملف افتراضي مؤقت فوراً حتى لا يتوقف أو يتأخر تسجيل الدخول أبداً
+  const defaultProfile: UserProfile = {
+    uid: firebaseUser.uid,
+    displayName: firebaseUser.displayName || "عضو وصال",
+    email: firebaseUser.email || "",
+    photoURL: firebaseUser.photoURL || "",
+    providerId: firebaseUser.providerData[0]?.providerId || "password",
+    role: isAdminEmail ? "admin" : "user",
+    profileCompleted: false,
+    accountStatus: "active",
+    createdAt: new Date(),
+    lastLoginAt: new Date(),
+    isOnline: true
+  };
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(defaultProfile));
+  } catch (_) {}
+
+  return defaultProfile;
 }
 
 /**
@@ -138,7 +201,8 @@ export async function loginWithGoogle(): Promise<User | null> {
     // نحاول أولاً باستخدام Popup على جميع الأجهزة (حتى الهواتف) لضمان ظهور نافذة اختيار الحساب
     const result = await signInWithPopup(auth, provider);
     if (result && result.user) {
-      await syncUserToFirestore(result.user);
+      // نبدأ المزامنة في الخلفية فوراً دون تأخير استجابة تسجيل الدخول
+      syncUserToFirestore(result.user).catch(() => {});
       return result.user;
     }
     return null;
@@ -160,7 +224,7 @@ export async function handleRedirectResult(): Promise<User | null> {
   try {
     const result = await getRedirectResult(auth);
     if (result && result.user) {
-      await syncUserToFirestore(result.user);
+      syncUserToFirestore(result.user).catch(() => {});
       return result.user;
     }
     return null;
@@ -176,7 +240,7 @@ export async function handleRedirectResult(): Promise<User | null> {
 export async function registerWithEmail(email: string, pass: string): Promise<User> {
   const cred = await createUserWithEmailAndPassword(auth, email, pass);
   await sendEmailVerification(cred.user);
-  await syncUserToFirestore(cred.user);
+  syncUserToFirestore(cred.user).catch(() => {});
   return cred.user;
 }
 
@@ -185,7 +249,7 @@ export async function registerWithEmail(email: string, pass: string): Promise<Us
  */
 export async function loginWithEmail(email: string, pass: string): Promise<User> {
   const cred = await signInWithEmailAndPassword(auth, email, pass);
-  await syncUserToFirestore(cred.user);
+  syncUserToFirestore(cred.user).catch(() => {});
   return cred.user;
 }
 
