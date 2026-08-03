@@ -187,7 +187,10 @@ export const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, on
       });
 
       await refreshProfile();
-      setSuccessMsg("تم حفظ الملف الشخصي بنجاح! إذا قمت برفع صورة جديدة فسيتم عرضها للعامة فور اعتمادها من الإدارة.");
+      setSuccessMsg("تم حفظ الملف الشخصي بنجاح! سيتم إغلاق النافذة الآن...");
+      setTimeout(() => {
+        onClose();
+      }, 1200);
     } catch (err: any) {
       setErrorMsg(err?.message || "حدث خطأ أثناء الحفظ. يرجى إعادة المحاولة.");
     } finally {

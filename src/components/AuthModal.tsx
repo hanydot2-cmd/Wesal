@@ -78,7 +78,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onOpenLeg
         setSuccessMsg("تم إنشاء الحساب بنجاح! تم إرسال رسالة تحقق إلى بريدك الإلكتروني.");
         setTimeout(() => {
           onClose();
-        }, 2500);
+        }, 1500);
       } catch (err: any) {
         setErrorMsg(getArabicAuthError(err));
       } finally {

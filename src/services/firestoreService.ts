@@ -33,14 +33,27 @@ import { analyzeMessagePrivacy } from "../utils/securityFilter";
 // 1. إدارة الملف الشخصي (User Profiles)
 // ==========================================
 export async function getProfileByUid(uid: string): Promise<UserProfile | null> {
+  const CACHE_KEY = `wisal_profile_${uid}`;
   try {
-    const snap = await getDoc(doc(db, "users", uid));
-    if (snap.exists()) {
-      return snap.data() as UserProfile;
+    const getDocPromise = getDoc(doc(db, "users", uid));
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000));
+    const snap = await Promise.race([getDocPromise, timeoutPromise]);
+    if (snap && snap.exists()) {
+      const data = snap.data() as UserProfile;
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (_) {}
+      return data;
+    }
+    const cachedStr = localStorage.getItem(CACHE_KEY);
+    if (cachedStr) {
+      return JSON.parse(cachedStr) as UserProfile;
     }
     return null;
   } catch (error) {
     console.error("خطأ في جلب الملف الشخصي:", error);
+    try {
+      const cachedStr = localStorage.getItem(CACHE_KEY);
+      if (cachedStr) return JSON.parse(cachedStr) as UserProfile;
+    } catch (_) {}
     return null;
   }
 }
@@ -53,7 +66,19 @@ export async function updateProfileData(uid: string, data: Partial<UserProfile>)
   delete safeData.role;
   delete safeData.accountStatus;
 
-  await setDoc(docRef, safeData, { merge: true });
+  // 1. تحديث الكاش المحلي فوراً (0ms latency) لضمان استجابة فورية دون أي تأخير
+  const CACHE_KEY = `wisal_profile_${uid}`;
+  try {
+    const existingStr = localStorage.getItem(CACHE_KEY);
+    const existingProfile = existingStr ? JSON.parse(existingStr) : {};
+    const merged = { ...existingProfile, ...safeData };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(merged));
+  } catch (_) {}
+
+  // 2. إرسال التحديث إلى Firestore مع حد أقصى للانتظار 800ms (حتى لا يتأخر الحفظ أبداً ويستمر في الخلفية)
+  const setDocPromise = setDoc(docRef, safeData, { merge: true });
+  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 800));
+  await Promise.race([setDocPromise, timeoutPromise]);
 }
 
 export async function getAllApprovedMembers(): Promise<UserProfile[]> {
