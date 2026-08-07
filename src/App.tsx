@@ -28,6 +28,7 @@ import {
   getUserInteractions,
   sendCommunicationRequest
 } from "./services/firestoreService";
+import { seedFemaleProfilesIfNeeded } from "./services/seedService";
 import { HeartHandshake, Sparkles, RefreshCw, Users, ShieldAlert } from "lucide-react";
 
 const AppContent: React.FC = () => {
@@ -74,6 +75,8 @@ const AppContent: React.FC = () => {
   const fetchMembers = async () => {
     setMembersLoading(true);
     try {
+      // التأكد من وجود وتغذية الـ 50 بروفايل في قاعدة بيانات Firebase
+      await seedFemaleProfilesIfNeeded();
       const list = await getAllApprovedMembers();
       setMembers(list);
     } catch (err) {

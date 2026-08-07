@@ -87,7 +87,7 @@ export async function getAllApprovedMembers(): Promise<UserProfile[]> {
       collection(db, "users"),
       where("accountStatus", "==", "active"),
       where("profileCompleted", "==", true),
-      limit(50)
+      limit(250)
     );
     const snaps = await getDocs(q);
     return snaps.docs.map((docSnap) => docSnap.data() as UserProfile);
@@ -117,6 +117,28 @@ export async function sendInteraction(
   toUid: string,
   type: InteractionType
 ): Promise<{ mutual: boolean; id: string }> {
+  // منع تكرار التفاعل نفسه بين نفس الطرفين
+  const existingQuery = query(
+    collection(db, "interactions"),
+    where("fromUid", "==", fromUid),
+    where("toUid", "==", toUid),
+    where("type", "==", type)
+  );
+  const existingSnaps = await getDocs(existingQuery);
+
+  const mutualQuery = query(
+    collection(db, "interactions"),
+    where("fromUid", "==", toUid),
+    where("toUid", "==", fromUid)
+  );
+  const mutualSnaps = await getDocs(mutualQuery);
+  const isMutual = !mutualSnaps.empty;
+
+  if (!existingSnaps.empty) {
+    // التفاعل موجود مسبقاً، منع التكرار
+    return { mutual: isMutual, id: existingSnaps.docs[0].id };
+  }
+
   // حفظ التفاعل
   const docRef = await addDoc(collection(db, "interactions"), {
     fromUid,
@@ -126,15 +148,6 @@ export async function sendInteraction(
     fromPhoto,
     createdAt: serverTimestamp()
   });
-
-  // فحص هل هناك إعجاب متبادل سابق من الطرف الآخر
-  const mutualQuery = query(
-    collection(db, "interactions"),
-    where("fromUid", "==", toUid),
-    where("toUid", "==", fromUid)
-  );
-  const mutualSnaps = await getDocs(mutualQuery);
-  const isMutual = !mutualSnaps.empty;
 
   // إرسال إشعار للطرف الآخر
   let typeTitle = "إعجاب جديد ❤️";
@@ -150,6 +163,17 @@ export async function sendInteraction(
     type: isMutual ? "mutual" : type,
     read: false
   });
+
+  // إذا كان البروفايل المستهدف مُدار من قِبل الإدارة وليس له حساب دخول منفصل، أرسل إشعار للإدارة
+  if (toUid.startsWith("female_p_") || toUid.includes("female_")) {
+    await createNotification({
+      userId: "admin",
+      title: `تفاعل جديد على بروفايل مُدار (${typeTitle})`,
+      message: `قام العضو (${fromName}) بالتفاعل بـ (${typeTitle}) مع البروفايل المُدار (${toUid}).`,
+      type: isMutual ? "mutual" : type,
+      read: false
+    });
+  }
 
   if (isMutual) {
     await createNotification({
