@@ -35,9 +35,7 @@ import { analyzeMessagePrivacy } from "../utils/securityFilter";
 export async function getProfileByUid(uid: string): Promise<UserProfile | null> {
   const CACHE_KEY = `wisal_profile_${uid}`;
   try {
-    const getDocPromise = getDoc(doc(db, "users", uid));
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000));
-    const snap = await Promise.race([getDocPromise, timeoutPromise]);
+    const snap = await getDoc(doc(db, "users", uid));
     if (snap && snap.exists()) {
       const data = snap.data() as UserProfile;
       try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (_) {}
@@ -49,7 +47,7 @@ export async function getProfileByUid(uid: string): Promise<UserProfile | null> 
     }
     return null;
   } catch (error) {
-    console.error("خطأ في جلب الملف الشخصي:", error);
+    console.error("خطأ في جلب الملف الشخصي من خادم البيانات:", error);
     try {
       const cachedStr = localStorage.getItem(CACHE_KEY);
       if (cachedStr) return JSON.parse(cachedStr) as UserProfile;
@@ -60,13 +58,13 @@ export async function getProfileByUid(uid: string): Promise<UserProfile | null> 
 
 export async function updateProfileData(uid: string, data: Partial<UserProfile>): Promise<void> {
   const docRef = doc(db, "users", uid);
-  // تأكد من عدم السماح بتعديل uid أو role أو accountStatus عبر واجهة المستخدم
+  // تأكد من عدم السماح بتعديل uid أو role أو accountStatus عبر واجهة المستخدم العادية
   const safeData = { ...data };
   delete safeData.uid;
   delete safeData.role;
   delete safeData.accountStatus;
 
-  // 1. تحديث الكاش المحلي فوراً (0ms latency) لضمان استجابة فورية دون أي تأخير
+  // 1. تحديث الكاش المحلي فوراً (0ms latency) لضمان استجابة الواجهة فورياً
   const CACHE_KEY = `wisal_profile_${uid}`;
   try {
     const existingStr = localStorage.getItem(CACHE_KEY);
@@ -75,10 +73,8 @@ export async function updateProfileData(uid: string, data: Partial<UserProfile>)
     localStorage.setItem(CACHE_KEY, JSON.stringify(merged));
   } catch (_) {}
 
-  // 2. إرسال التحديث إلى Firestore مع حد أقصى للانتظار 800ms (حتى لا يتأخر الحفظ أبداً ويستمر في الخلفية)
-  const setDocPromise = setDoc(docRef, safeData, { merge: true });
-  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 800));
-  await Promise.race([setDocPromise, timeoutPromise]);
+  // 2. إرسال التحديث بشكل آمن ومؤكد إلى قاعدة بيانات Firestore
+  await setDoc(docRef, safeData, { merge: true });
 }
 
 export async function getAllApprovedMembers(): Promise<UserProfile[]> {
@@ -86,13 +82,14 @@ export async function getAllApprovedMembers(): Promise<UserProfile[]> {
     const q = query(
       collection(db, "users"),
       where("accountStatus", "==", "active"),
-      where("profileCompleted", "==", true),
       limit(250)
     );
     const snaps = await getDocs(q);
-    return snaps.docs.map((docSnap) => docSnap.data() as UserProfile);
+    const members = snaps.docs.map((docSnap) => docSnap.data() as UserProfile);
+    // تصفية الملفات المكتملة في الذاكرة لتفادي مشاكل الفهارس والمركبة
+    return members.filter((m) => m.profileCompleted !== false);
   } catch (error) {
-    console.warn("خطأ أو تأخر في جلب الأعضاء (ربما الفهرس قيد الإنشاء):", error);
+    console.warn("خطأ في جلب قائمة الأعضاء من قاعدة البيانات:", error);
     return [];
   }
 }
